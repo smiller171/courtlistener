@@ -7,7 +7,7 @@ from alert.lib.filesize import size
 from alert.search.models import Court
 from alert.stats import tally_stat
 
-from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from lib import search_utils
@@ -142,9 +142,10 @@ def coverage_data(request, court):
     Responds to either AJAX or regular requests.
     """
     conn = sunburnt.SolrInterface(settings.SOLR_OPINION_URL, mode='r')
-    start_year = search_utils.get_court_start_year(conn, court)
+    q = request.GET.get('q')
+    start_year = search_utils.get_court_start_year(conn, court, q)
     response = conn.raw_query(
-        **search_utils.build_coverage_query(court, start_year)
+        **search_utils.build_coverage_query(court, q, start_year)
     ).execute()
     counts = response.facet_counts.facet_ranges[0][1][0][1]
     counts = strip_trailing_zeroes(counts)

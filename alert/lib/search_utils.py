@@ -1,9 +1,9 @@
 from urllib import urlencode
 from urlparse import parse_qs
+from django.conf import settings
 from django.utils.timezone import now
 
 from alert.lib import sunburnt
-from django.conf import settings
 
 
 def make_get_string(request, nuke_fields=None):
@@ -449,12 +449,12 @@ def place_facet_queries(cd, conn=sunburnt.SolrInterface(settings.SOLR_OPINION_UR
     return stat_facet_fields
 
 
-def get_court_start_year(conn, court):
+def get_court_start_year(conn, court, q):
     """Get the start year for a court by placing a Solr query. If a court is
     active, but does not yet have any results, return the current year.
     """
     if court.lower() == 'all':
-        params = {'sort': 'dateFiled asc', 'rows': 1, 'q': '*:*'}
+        params = {'sort': 'dateFiled asc', 'rows': 1, 'q': q or '*:*'}
     else:
         params = {'fq': ['court_exact:%s' % court], 'sort': 'dateFiled asc', 'rows': 1}
     params['caller'] = 'search_utils'
@@ -468,7 +468,7 @@ def get_court_start_year(conn, court):
     return year
 
 
-def build_coverage_query(court, start_year):
+def build_coverage_query(court, q, start_year):
     params = {
         'facet': 'true',
         'facet.range': 'dateFiled',
@@ -476,7 +476,7 @@ def build_coverage_query(court, start_year):
         'facet.range.end': 'NOW/DAY',
         'facet.range.gap': '+1YEAR',
         'rows': 0,
-        'q': '*:*',  # Without this, results will be omitted.
+        'q': q or '*:*',  # A default *must* be given.
         'caller': 'build_coverage_query',
     }
     if court.lower() != 'all':
